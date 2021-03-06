@@ -43,10 +43,9 @@
 # -*- coding: utf-8 -*-
 #@author:EnderLop
 from os import system
-from PIL import Image,ImageGrab
-from pymouse import PyMouse
+from PIL import ImageGrab
 import numpy as np
-import time
+import time,win32api,win32con
 totalRound = 0
 x0Amb,y0Amb,x1Amb,y1Amb = (0,0,1919,1079)
 x0Acc,y0Acc,x1Acc,y1Acc = (0,0,1919,1079)
@@ -55,19 +54,19 @@ x0Acc,y0Acc,x1Acc,y1Acc = (0,0,1919,1079)
 """游戏预先处理单元"""
 '''小窗适配'''
 def windowsConfig():
-    global x0Amb,y0Amb,x1Amb,y1Amb
+    global x0Amb,y0Amb,x1Amb,y1Amb,mouse_position
     system("cls")
     print("下面开始检查游戏界面左上角边缘点")
     time.sleep(1)
     print("\a请在2s内将鼠标移至游戏界面左上角")
     time.sleep(2)
-    x0Amb,y0Amb = m.position()[0],m.position()[1]#获取游戏界面左上角模糊绝对位置
+    x0Amb,y0Amb = mouse_position[0],mouse_position[1]#获取游戏界面左上角模糊绝对位置
     system("cls")
     print("下面开始检查游戏界面右下角边缘点")
     time.sleep(1)
     print("\a请在2s内将鼠标移至游戏界面右下角")
     time.sleep(2)
-    x1Amb,y1Amb = m.position()[0],m.position()[1]#获取游戏界面右下角模糊绝对位置
+    x1Amb,y1Amb = mouse_position[0],mouse_position[1]#获取游戏界面右下角模糊绝对位置
 
 '''模糊绝对位置精确化（四分色块法）'''
 def cornerConfig(info):
@@ -77,7 +76,7 @@ def cornerConfig(info):
     time.sleep(1)
     print("\a请在2s内将鼠标移至模拟器边框上")
     time.sleep(2)
-    [R,G,B] = info[m.position()[0],m.position()[1]].tolist()
+    [R,G,B] = info[mouse_position[0],mouse_position[1]].tolist()
     x0Min,y0Min = max(1,x0Amb-5),max(1,y0Amb-5)
     x1Max,y1Max = min((x1Amb+5),1918),min((y1Amb+5),1078)
     for i in range(x0Min,(x0Amb+5)):
@@ -100,6 +99,12 @@ def stateTransform(xOri,yOri):
     yNew = y0Acc + yOri * (y1Acc - y0Acc) / 1079#Y轴绝对位置变换
     yNew = int (yNew)
     return xNew,yNew
+
+def click(state_x,state_y,n):
+    win32api.SetCursorPos((state_x,state_y))
+    for i  in range(n):
+        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
 
 
 """游戏信息获取单元"""
@@ -157,7 +162,7 @@ def fangWenJump(info):
         if autoShine(info):#关闭AUTO模式
             for round in range(5):
                 if autoShine(info):
-                    m.click(stateTransform(1825,30)[0],stateTransform(1825,30)[1],1)
+                    click(stateTransform(1825,30)[0],stateTransform(1825,30)[1],1)
                     time.sleep(0.25)
                     info = detectFlash()
                 elif not autoShine(info) and not (autoShine(info) is None):
@@ -166,16 +171,16 @@ def fangWenJump(info):
                     return None
             else:
                 return None
-        m.click(stateTransform(655,965)[0],stateTransform(655,965)[1],1)
+        click(stateTransform(655,965)[0],stateTransform(655,965)[1],1)
         time.sleep(0.5)
         info = detectFlash()
     elif colorCompare(info,1350,920,3,113,104):
-        m.click(stateTransform(1690,190)[0],stateTransform(1690,190)[1],1)
+        click(stateTransform(1690,190)[0],stateTransform(1690,190)[1],1)
         time.sleep(0.5)
-        m.click(stateTransform(1565,965)[0],stateTransform(1565,965)[1],1)
+        click(stateTransform(1565,965)[0],stateTransform(1565,965)[1],1)
         time.sleep(0.5)
         for i in range(7):
-            m.click(stateTransform(960,540)[0],stateTransform(960,540)[1],1)
+            click(stateTransform(960,540)[0],stateTransform(960,540)[1],1)
             time.sleep(1)
         print("{}：完成一次芳文跳释放".format(time.strftime("%Y/%m/%d %H:%M:%S")))
 
@@ -184,7 +189,7 @@ def feelFish(info):
     if not starShine(info) and not autoShine(info) and not (starShine(info) is None) and not (autoShine(info) is None):
         for round in range(5):
             if not autoShine(info) and not (autoShine(info) is None):
-                m.click(stateTransform(1825,30)[0],stateTransform(1825,30)[1],1)
+                click(stateTransform(1825,30)[0],stateTransform(1825,30)[1],1)
                 time.sleep(0.5)
                 info = detectFlash()
             elif autoShine(info):
@@ -200,9 +205,9 @@ def finallyFinsih(info):
     if finishShine(info):
         time.sleep(1)
         for round in range(3):
-            m.click(stateTransform(960,800)[0],stateTransform(960,800)[1],1)
+            click(stateTransform(960,800)[0],stateTransform(960,800)[1],1)
             if colorCompare(info,630,280,255,154,185) and colorCompare(info,630,130,127,77,92):
-                m.click(stateTransform(960,680)[0],stateTransform(960,680)[1],1)
+                click(stateTransform(960,680)[0],stateTransform(960,680)[1],1)
             time.sleep(1)
         print("{}：完成一场大对战刷轮".format(time.strftime("%Y/%m/%d %H:%M:%S")))
 
@@ -210,7 +215,7 @@ def finallyFinsih(info):
 def restartGame(info):
     global totalRound
     if colorCompare(info,580,85,255,154,185) and colorCompare(info,695,885,200,152,110):
-        m.click(stateTransform(630,990)[0],stateTransform(630,990)[1],1)
+        click(stateTransform(630,990)[0],stateTransform(630,990)[1],1)
         time.sleep(3)
         totalRound += 1
         print("{0}：已完成{1}场战斗,正在开始第{2}场战斗".format(time.strftime("%Y/%m/%d %H:%M:%S"),totalRound,totalRound+1))
@@ -225,8 +230,7 @@ def main():
 
 
 '''运行函数'''
-m = PyMouse()
-endTrigger = m.position()
+mouse_position = (1,1)
 userChoice = eval(input("以何种模式进行游戏？\n（输入0表示窗口化游戏，输入其他数字表示全屏游戏）\n"))
 if userChoice == 0:
     windowsConfig()
@@ -235,8 +239,8 @@ time.sleep(2)
 system("cls")
 print("\a{}：代肝工作开始".format(time.strftime("%Y/%m/%d %H:%M:%S")))
 timeStart = time.perf_counter()
-while endTrigger != (0,0):
-    endTrigger = m.position()
+while mouse_position != (0,0):
+    mouse_position = win32api.GetCursorPos()
     main()
 dur = time.perf_counter() - timeStart
 print("\a{}：代肝工作结束".format(time.strftime("%Y/%m/%d %H:%M:%S")))
